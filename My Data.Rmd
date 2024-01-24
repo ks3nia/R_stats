@@ -1,0 +1,373 @@
+---
+title: "Mydata"
+author: "KV"
+date: "1/20/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+~~~~~~~~~~~~~~~~~~
+DataBlitz Presentation: 1/22/2020
+
+Description of overall experiment: 
+2 groups of animals: Control (3 males, 5 females) and Experimental (4 males,5 females). 
+Control animals: received inactive DREADD injection in brain region hypothezised to control behavioral arousal/sedation. 
+Experimental animals: received combination of 2 active DREADDS in same brain region (hM3Dq and KORD). hM3Dq is activated by the ligand CNO which causes neuronal excitation. KORD is activated by the ligand SalB (Salvinorin B) which causes neuronal inhibition. 
+
+All animals will receive both ligands as well as a Saline control (CNO is known to have off target effects at some doses which could cause sedation)
+
+
+General methods: This data is from an open field test - 5 minute test where the animal is placed in a novel environment and can explore freely. Groups and treatments were randomized and the experimenter was blinded to both. The AnyMaze software has a camera above the box which tracks the animal's movement throughout the test. 
+
+Animals were each injected with the ligands/saline 30 min before the start of the test. 
+
+Content of datafiles: 
+These are very big spreadsheets with repeated measures (each animal was tested 3 times with a different drug treatment on a different day) and every parameter than the AnyMaze tracking software was able to pick up on. Not all of these values are going to be correct- verified with video recordings. For example, if the animal is not moving but sits on a boundary line, the program will keep counting "line crossings" even though the animal is not actually moving. "Time mobile" is also calculated based on that parameter. 
+
+"Distance" is most reliable because it's based on the animal's track pattern on the camera and can be double checked with the video recordings. 
+
+
+
+```{r}
+#Let's look at the experimental group data first (these animals got active DREADDS virus injected into a brain region)
+
+setwd("C:/Users/Ksenia/OneDrive/Desktop/stats class")
+mydata_df <- read.csv("C:/Users/Ksenia/OneDrive/Desktop/stats class/posteeg_data_expgroup.csv", header = TRUE)
+
+View(mydata_df)
+
+#plot(mydata_df, cex=0.2) #looks at everything all at once- file too big to plot though
+
+```
+
+Look through the general structure of the data file:
+
+```{r}
+str(mydata_df)
+head(mydata_df)
+```
+
+We can look at different measures but "Distance" (distance traveled within the 5 min duration of the test) inside the open field is most important/accurate measurement recorded by this program: 
+
+```{r}
+#Let's first see if the drugs behaved as expected in the experimental group: (expect CNO to decrease activity, SalB to increase activity compared to Saline)
+
+d <-mydata_df$Distance
+
+#need to separate by treatment group (CNO, SalB, Saline)
+d.CNO <-d[mydata_df$Treatment =="CNO"]
+
+d.SalB <-d[mydata_df$Treatment =="Sal B"]
+d.Saline <-d[mydata_df$Treatment =="Saline"]
+
+boxplot(d.CNO, d.SalB, d.Saline,
+        main = "Experimental Group: Distance traveled by treatment",
+        names = c("CNO", "SalB", "Saline"),
+        notch = FALSE)
+```
+Fig 1 Legend: Distance traveled in Open Field test for the experimental group animals (n=9). CNO caused a big decrease in overall activity compared to Saline control, while SalB might have caused a slight increase in activity. 
+
+We can also look at mean speed: second most accurate measurement
+
+```{r}
+s <-mydata_df$Mean.speed
+
+#need to separate by treatment group (CNO, SalB, Saline)
+s.CNO <-s[mydata_df$Treatment =="CNO"]
+
+s.SalB <-s[mydata_df$Treatment =="Sal B"]
+s.Saline <-s[mydata_df$Treatment =="Saline"]
+
+boxplot(s.CNO, s.SalB, s.Saline,
+        main = "Experimental Group: Mean speed by treatment",
+        names = c("CNO", "SalB", "Saline"),
+        notch = FALSE)
+```
+Fig 2 Legend: Mean speed (m/sec) of the experimental group animals in Open Field test(n=9). CNO caused a big decrease in overall activity compared to Saline control, while SalB might have caused a slight increase in activity (same trend). 
+
+
+If the camera properly tracked the animal's head during the test, the head distance might give a better estimate of actual location and distance:
+```{r}
+h <-mydata_df$Head..distance.travelled
+
+#need to separate by treatment group (CNO, SalB, Saline)
+h.CNO <- h[mydata_df$Treatment =="CNO"]
+
+h.SalB <-h[mydata_df$Treatment =="Sal B"]
+h.Saline <-h[mydata_df$Treatment =="Saline"]
+
+boxplot(h.CNO, h.SalB, h.Saline,
+        main = "Experimental Group: Head distance traveled by treatment",
+        names = c("CNO", "SalB", "Saline"),
+        notch = FALSE)
+```
+Fig 3 Legend: Head distance traveled in Open Field test for the experimental group animals (n=9). CNO caused a big decrease in overall activity compared to Saline control. SalB effect seems negligable compared to Saline and there is more variability in the CNO condition.  
+
+
+Now let's upload the control group data. These animals got a control DREADDS injected in the same region - ideally shouldnt be any difference between any of the treatment groups. 
+
+```{r}
+
+controldata_df <- read.csv("C:/Users/Ksenia/OneDrive/Desktop/stats class/postEEG_data_control group2.csv", header = TRUE)
+
+View(controldata_df)
+str(mydata_df)
+head(mydata_df)
+
+
+```
+```{r}
+#make the same plots but for controls: 
+d2<-controldata_df$Distance
+
+#need to separate by treatment group (CNO, SalB, Saline)
+d2.CNO <-d2[controldata_df$Treatment =="CNO"]
+
+d2.SalB <-d2[controldata_df$Treatment =="Sal B"]
+d2.Saline <-d2[mydata_df$Treatment =="Saline"]
+
+boxplot(d2.CNO, d2.SalB, d2.Saline,
+        main = "Control group: Distance traveled by treatment",
+        names = c("CNO", "SalB", "Saline"),
+        notch = FALSE)
+```
+Fig 4 Legend: Distance traveled in Open Field test for the control group animals (n=8). Might be a slight decrease in activity for the CNO condition but overall the ligands have no effect compared to Saline control. 
+
+```{r}
+s2 <-controldata_df$Mean.speed
+
+#need to separate by treatment group (CNO, SalB, Saline)
+s2.CNO <-s2[controldata_df$Treatment =="CNO"]
+
+s2.SalB <-s2[controldata_df$Treatment =="Sal B"]
+s2.Saline <-s2[controldata_df$Treatment =="Saline"]
+
+boxplot(s2.CNO, s2.SalB, s2.Saline,
+        main = "Control group: Mean speed by treatment",
+        names = c("CNO", "SalB", "Saline"),
+        notch = FALSE)
+```
+Fig 5 Legend: Mean speed (m/sec) in Open Field test for the control group animals (n=8). Might be a slight decrease in activity for the CNO condition but overall the ligands have no effect compared to Saline control (same trend).
+
+
+For all of these boxplots, there might be a lot of individual variability between animals within each treatment group. It would be helpful to see individual data points. 
+
+```{r}
+#Trial code to look at individual points (data distribution is usually hidden within the boxplot). This code adapted from: https://www.r-graph-gallery.com/96-boxplot-with-jitter.html
+
+
+controldata_df$Mean.speed
+controldata_df$Treatment
+
+names <-controldata_df$Treatment
+value <-controldata_df$Mean.speed
+data <-data.frame(names,value)
+ 
+# Basic boxplot
+boxplot(data$value ~ data$names , col=terrain.colors(4) )
+ 
+# Add data points
+mylevels <- levels(data$names)
+levelProportions <- summary(data$names)/nrow(data)
+for(i in 1:length(mylevels)){
+ 
+  thislevel <- mylevels[i]
+  thisvalues <- data[data$names==thislevel, "value"]
+   
+  # take the x-axis indices and add a jitter, proportional to the N in each level
+  myjitter <- jitter(rep(i, length(thisvalues)), amount=levelProportions[i]/2)
+  points(myjitter, thisvalues, pch=20, col=rgb(0,0,0,.9)) 
+   
+}
+```
+
+We're going to use this over and over so easier to make a function than copy paste the same code:
+
+```{r}
+ 
+#Code for the Function "boxplots":
+
+#create the layout outside the function first (can change this as needed)
+
+boxplots = function(x, y, xlab ="", ylab ="", main=""){
+  names <-x
+  value <-y
+  
+  yhist = hist(y, plot=FALSE)
+  top = max(yhist$counts) #helps get limits for axes
+  
+  data <-data.frame(names,value)
+ 
+# Basic boxplot
+  boxplot(data$value ~ data$names, col=terrain.colors(4), xlab = NA, ylab = NA) #make sure to put NA so it can overwrite the lables later!
+ 
+# Add data points
+  mylevels <- levels(data$names)
+  levelProportions <- summary(data$names)/nrow(data)
+    for(i in 1:length(mylevels)){
+ 
+    thislevel <- mylevels[i]
+    thisvalues <- data[data$names==thislevel, "value"]
+   
+  # take the x-axis indices and add a jitter, proportional to the N in each level
+    myjitter <- jitter(rep(i, length(thisvalues)), amount=levelProportions[i]/2)
+    points(myjitter, thisvalues, pch=20, col=rgb(0,0,0,.9)) 
+   
+  }
+}
+
+boxplots(controldata_df$Treatment, controldata_df$Distance) #test out and it works!
+title(main= "Distance Traveled: Control Group", xlab = "Treatment", ylab ="Distance (m/sec)")
+
+```
+Fig 6 Legend: Distance traveled in Open Field test for the control group animals (n=8) with individual data points.There is a lot of variability in each of the treatment groups and 2 big outliers in the SalB plot. 
+
+
+Now we can start to compare the experimental and control groups in different measures (distance or speed). We should see the same overall trend in the data for both measures.
+
+```{r}
+#plot side by side all 4- control vs experimental:
+
+par(mfcol=c(2,2)) #Top two plots are Speed(control then experimental; bottom two are Distance 
+
+boxplots(controldata_df$Treatment, controldata_df$Mean.speed)
+title(main = "Mean Speed: Control Group", xlab = "Treatment", ylab = "Speed (m/sec)") #this works
+
+boxplots(controldata_df$Treatment, controldata_df$Distance)
+title(main = "Distance Traveled: Control Group", xlab = "Treatment", ylab = "Distance traveled (m)") 
+
+boxplots(mydata_df$Treatment, mydata_df$Mean.speed)
+title(main = "Mean Speed: Experimental Group", xlab = "Treatment", ylab = "Speed (m/sec)")
+
+boxplots(mydata_df$Treatment, mydata_df$Distance)
+title(main = "Distance Traveled: Experimental Group", xlab = "Treatment", ylab = "Distance traveled (m)") 
+
+
+```
+Fig 7 Legend: Distance traveled (m) and mean speed (m/sec) in Open Field test for the control group animals (n=8) and experimental group animals (n=9). General trend that CNO decreased activity in the experimental group compared to the control group. (**NOTE: can't figure out how to normalize y axes so it's easier to visually compare these plots) 
+
+```{r}
+
+#Same plots just different layout: split these into side by side charts (one comparing speed control vs exp; 2nd: comparing distance between control vs exp)
+
+
+nf <-layout(matrix(c(1,2,3,4), 1,4, byrow=TRUE))
+layout.show(nf)  #shows proposed layout
+
+par(mar= c(2,2,1,1))  
+boxplots(controldata_df$Treatment, controldata_df$Mean.speed)
+title(main = "Speed: Con", ylim = c(0, 30), xlab = "Treatment", ylab = "Speed (m/sec)")
+
+par(mar=c(2,2,1,1))
+boxplots(mydata_df$Treatment, mydata_df$Mean.speed)
+title(main = "Speed: Exp", ylim = c(0, 30), xlab = "Treatment", ylab = "Speed (m/sec)")
+
+par(mar=c(2,2,1,1))
+boxplots(controldata_df$Treatment, controldata_df$Distance)
+title(main = "Distance: Con", xlab = "Treatment", ylab = "Distance (m)")
+
+par(mar=c(2,2,1,1))
+boxplots(mydata_df$Treatment, mydata_df$Distance)
+title(main = "Distance: Exp",xlab = "Treatment", ylab ="Distance (m)")
+
+```
+
+
+Now, we should examine if there are male/female differences within each experimental/control group. (**Note: can't figure out how to standardize the y axis for all the side by side plots)
+
+```{r}
+
+#Find the males and females in the original data frame and put in one vector, then separate out by treatment type again
+
+exp.males <- mydata_df[mydata_df$Sex== "M", ] #need the comma!
+
+  
+exp.females <- mydata_df[mydata_df$Sex== "F", ]
+
+con.males <-controldata_df[controldata_df$Sex == "M",]
+con.females <-controldata_df[controldata_df$Sex == "F",]
+
+#male distance traveled:
+m.distance<- exp.males$Distance
+m2.distance<-con.males$Distance
+#female distance:
+f.distance<-exp.females$Distance
+f2.distance <-con.females$Distance
+
+par(mfcol=c(1,4))
+boxplots(exp.males$Treatment, m.distance)
+title(main = "Exp Males: Distance", ylim = c(0, 30), xlab = "Treatment", ylab = "Distance traveled (m)") #ylim doesnt work
+boxplots(exp.females$Treatment, f.distance)
+title(main = "Exp Females: Distance", ylim = c(0, 30), xlab = "Treatment")
+boxplots(con.males$Treatment, m2.distance)
+title(main = "Con Males: Distance", ylim = c(0, 30), xlab = "Treatment") 
+boxplots(con.females$Treatment, f2.distance)
+title(main = "Con Females: Distance", ylim = c(0, 30), xlab = "Treatment") 
+
+```
+Fig 8 Legend: Distance traveled in Open Field test in control and experimental groups separated by sex. There is a much bigger spread in the CNO data for the experimental females than experimental
+males in the CNO condition. There is also greater variability in the control females than control males for the saline condition. 
+
+
+Next, let's look at just the CNO treatment- separated by control vs experimental and males vs females (Fix the axis issue to have a better visual). Main question: Can you pool the male and female data in each control vs experimental group? 
+
+```{r}
+#make one boxplot with control CNO vs experimental CNO (males, females)
+
+malesCNO <- exp.males[exp.males$Treatment == "CNO", ]
+femalesCNO <-exp.females[exp.females$Treatment == "CNO", ]
+
+c.malesCNO <-con.males[con.males$Treatment =="CNO",]
+c.femalesCNO <-con.females[con.females$Treatment =="CNO",]
+
+m.distance<- malesCNO$Distance
+m2.distance <-c.malesCNO$Distance
+
+f.distance<- femalesCNO$Distance
+f2.distance <-c.femalesCNO$Distance
+
+boxplot(m.distance, f.distance, m2.distance, f2.distance, col=terrain.colors(6), names=c("Exp Males","Exp Females","Con Males", "Con Females")) #names (c) names the individual inputs
+title(main = "Distance traveled: CNO Treatment by Sex", ylim = c(0, 30), xlab = "Group", ylab = "Distance traveled (m)") #ylim doesnt work, xlab is overal x label
+
+
+#it would be helpful to plot this out using the same boxplots function to see individual data points (CNO has no effect/not significant effect on females?)
+```
+Fig 9 Legend: Distance traveled in Open Field test in control and experimental groups separated by sex for just the CNO treatment condition. There is a much bigger spread in the CNO data for the experimental females than experimental males in the CNO condition. In the controls, the males' have greater activity with CNO compared to females. Experimental and control females seem like they're very close (would expect to see a much larger decrease in activity in the experimentals, similar to the males).
+
+
+
+```{r}
+#Compare this with Saline- one boxplot all together:
+
+#CNO: Calculated above
+
+#Saline:
+malesSaline <- exp.males[exp.males$Treatment == "Saline", ]
+femalesSaline <-exp.females[exp.females$Treatment == "Saline", ]
+
+c.malesSaline <-con.males[con.males$Treatment =="Saline",]
+c.femalesSaline <-con.females[con.females$Treatment =="Saline",]
+
+m.dS<- malesSaline$Distance
+m2.dS <-c.malesSaline$Distance
+
+f.dS<- femalesSaline$Distance
+f2.dS <-c.femalesSaline$Distance
+
+boxplot(m.distance, f.distance, m.dS, f.dS, m2.distance, f2.distance, m2.dS, f2.dS, col= terrain.colors(10), names=c("EM CNO","EF CNO","EM Saline", "EF Saline", "CM CNO","CF CNO","CM Saline", "CF Saline")) #names (c) names the individual inputs
+title(main = "Distance traveled: CNO vs Saline by Sex", ylim = c(0, 30), xlab = "Group", ylab = "Distance traveled (m)") #ylim doesnt work, xlab is overal x label
+
+#E: experimental
+#C: control
+
+#note: can also make colors clearer: col =c("name of color", etc)
+
+```
+Fig 10 Legend: Distance traveled in Open Field test in control and experimental groups separated by sex, comparing CNO and Saline conditions. Overall, the control group data looks fairly close together but it is hard to compare to the Saline data from the experimental group, especially for the females. 
+
+Main questions: can you pool the data together for both sexes or do you have to do individual comparisons between groups? Is the difference being driven by outliers with different levels of viral expression (based on separate histology data)?

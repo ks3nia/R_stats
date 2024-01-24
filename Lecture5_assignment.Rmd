@@ -1,0 +1,201 @@
+---
+title: "Lecture5_assignment"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Standard deviation and standard error of the mean
+The SD and SEM are different statistical metrics - this exercise will illustrate how they are calculated and related.
+* Obtain 1000 samples from a Gaussian distributionwith mean=0 and SD=20 and plot as a histogram.
+
+```{r}
+#from lecture 4 assigment: 
+
+gauss_plot <- rnorm(1000, mean =0, sd =20)
+hist(gauss_plot)
+
+
+```
+
+
+* Calculate the standard deviation of this sample.
+
+```{r}
+sd(gauss_plot)
+```
+
+* Now, generate the sampling distribution of the mean. Remember - this is simply the distribution of means from sequential samples. Do this sequentially by getting 100 samples of size 3, 10 and 30. Tip: the easiest way to do this will be with a 'for' loop like so:
+```
+for (i in 1:100) {
+  do_interesting_stuff
+}
+```
+
+```{r}
+#Code adapted from: https://www.stat.ncsu.edu/people/ceyhan/courses/st372/ReviewDemo.html
+
+
+layout(matrix(c(1,2,3), 1,3))
+
+
+draws1 = sample(gauss_plot, size = 3 * 1000, replace = TRUE) #use the sample function instead of a for loop
+draws1 = matrix(draws1, 3)
+drawmeans1 = apply(draws1, 2, mean)
+hist(drawmeans1, main ="sample size 3")
+
+draws2 = sample(gauss_plot, size = 10 * 1000, replace = TRUE)
+draws2 = matrix(draws2, 10)
+drawmeans2 = apply(draws2, 2, mean)
+hist(drawmeans2, main ="sample size 10")
+
+draws3 = sample(gauss_plot, size = 30 * 1000, replace = TRUE)
+draws3 = matrix(draws3, 30)
+drawmeans3 = apply(draws3, 2, mean)
+hist(drawmeans3, main ="sample size 30")
+
+ 
+
+```
+
+
+* Plot the SD and the three different sampling distributions of the mean in adjacent or superimposed histograms, and calculate their numeric values.
+
+```{r}
+#try to make them overlapping -find code online
+
+
+#layout <-layout(matrix(c(1,2,3,4,5,6), 2,3, byrow=TRUE))
+#layout.show(layout)
+
+par(mar= c(2,2,1,1)) 
+draws1 = sample(x, size = 3 * 1000, replace = TRUE)
+draws1 = matrix(draws1, 3)
+drawmeans1 = apply(draws1, 2, mean)
+hist(drawmeans1, main ="sample size 3")
+
+par(mar= c(2,2,1,1)) 
+draws2 = sample(x, size = 10 * 1000, replace = TRUE)
+draws2 = matrix(draws2, 10)
+drawmeans2 = apply(draws2, 2, mean)
+hist(drawmeans2, main ="sample size 10")
+
+par(mar= c(2,2,1,1)) 
+draws3 = sample(x, size = 30 * 1000, replace = TRUE)
+draws3 = matrix(draws3, 30)
+drawmeans3 = apply(draws3, 2, mean)
+hist(drawmeans3, main ="sample size 30")
+#hist(x, col ="lightblue")
+#arrows(mean(x), 0, mean(x), 200, col ="red")
+```
+
+
+```{r}
+#plot gauss_plot next to all three on one plot
+hist(drawmeans1, col=rgb(1,0,0,0.5), ylim=c(0,300), xlim=c(-70,70), main= "Overlapping SD and means") #blue
+hist(drawmeans2, col=rgb(0,0,1,0.5), add=T) #red
+hist(drawmeans3, col="light blue", add=T)
+hist(gauss_plot, col =rgb(0.8,0.8,0.8,0.5), add=T) #gray
+
+
+#code adapted from:https://www.r-bloggers.com/overlapping-histogram-in-r/
+```
+
+
+# Central limit theorem: originating a Gaussian distribution from different probability distributions
+Demonstrate the central limit theorem using the following original distributions:
+* Gaussian distribution (rnorm) with mean = 0 and SD = 20
+* Uniform distribution (runif) with min/max values of 0 and 1
+* A binomial distribution (rbinom) with p=0.1
+* Chi-square distribution (rchisq) with 3 degrees of freedom
+
+Generate the following samples and plot as a 3x2 layout:
+For each one of these, start by characterizing the probability distribution function by drawing 10,000 random samples. Plot the resulting distributions as a histogram.
+The code should be something like this:
+```
+draw 10,000 samples from distribution
+plot vector_of_samples as histogram
+```
+
+```{r}
+#Gaussian:
+
+par(mfcol=c(3,2))
+
+gauss_plot2 <- rnorm(10000, mean =0, sd =20)
+hist(gauss_plot2, main ="Gaussian")
+
+#Uniform:
+uniform <- runif(10000, min=0, max=1)
+hist(uniform, main ="Uniform")
+
+#Binomial:
+binomial <- rbinom(10000,size=1, p=0.1 )
+hist(binomial, main ="Binomial")
+
+#Chi square:
+chisq <- rchisq(10000,3)
+hist(chisq, main = "Chi-square")
+
+```
+
+Then, use a 'for' loop to generate 10,000 random drawings of 25 samples each and calculate the mean for each one of these. Plot the resulting distribution of means.
+
+The code should be something like this:
+```
+for 10,000 iterations 
+  draw 10 samples from distribution
+  save mean in vector_of_means
+end
+plot vector_of_means as histogram
+```
+```{r}
+
+#do the same thing as above: 
+par(mfcol=c(3,2))
+
+ 
+draws1 = gauss_plot2
+draws1 = matrix(draws1, 25)
+drawmeans1 = apply(draws1, 2, mean)
+hist(drawmeans1, main ="Gaussian mean 25 samples")
+
+draws2 = uniform
+draws2 = matrix(draws2, 25)
+drawmeans2 = apply(draws2, 2, mean)
+hist(drawmeans2, main ="Uniform means") 
+ 
+draws3 = binomial
+draws3 = matrix(draws3, 25)
+drawmeans3 = apply(draws3, 2, mean)
+hist(drawmeans3, main ="Binomial means", xlim= c(0,0.5))
+
+draws4 = chisq
+draws4 = matrix(draws4, 25)
+drawmeans4 = apply(draws4, 2, mean)
+hist(drawmeans4, main ="Chi-square means")
+
+
+#not sure if this method actually works
+
+```
+
+
+# Central limit theorem: dependency on sample size (OPTIONAL)
+The CLT states that the distribution of sample means approximates a normal distribution as the sample size becomes larger. Test this directly: starting with a uniform distribution, plot (as histograms) the distribution of the means from drawing 20, 100 and 5000 samples.
+
+Plotting the vectors of means is useful, but you may need to formally test for normality before you embark on statistical inference using parametric testing. The Shapiro-Wilks test is a statistical test that allows testing for normality in a vector of values. Use it (shapiro.test()) to test whether your samples are normally distributed (p<0.05 means they are).
+
+You can do this easily iterating over the different sample sizes using a 'for' loop. Here's some pseudo-code to get you started:
+```
+define sample_sizes
+for sample in sample_size
+  draw n_of_samples from distribution
+  plot n_of_samples as histogram
+  shapiro_test n_of_samples
+end
+```

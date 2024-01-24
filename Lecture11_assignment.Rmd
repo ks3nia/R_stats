@@ -1,0 +1,60 @@
+---
+title: "Lecture12_assignment"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Linear regression and associated functions
+* Load R data set mtcars using load(mtcars)
+
+```{r}
+require(graphics)
+require(tidyverse)
+#load funtion doesnt work, use data()
+
+data("mtcars")
+```
+
+* Next, examine the data using head(), str() or whatever function you prefer.
+```{r}
+head(mtcars)
+```
+
+* Then plot the relationship between hp and mpg using a scatterplot.
+```{r}
+plot(mtcars$hp, mtcars$mpg)
+
+```
+
+
+* Run linear regression hp and mpg. Assign the returned lm object to a variable in your workspace. Remember the syntax is lm(y ~ x)
+```{r}
+linreg<- lm(mtcars$hp ~ mtcars$mpg)
+
+```
+
+* Examine the results of the linear regression using summary(lm_object)
+```{r}
+summary(linreg)
+```
+
+* Verify the fit using plot(lm_object)
+```{r}
+plot(linreg)
+```
+
+* Add the linear regression fit to your original scatterplot using abline(lm_object)
+```{r}
+#from https://www.statmethods.net/graphs/scatterplot.html
+
+attach(mtcars)
+plot(hp, mpg, main="Scatterplot Example",
+   xlab="hp ", ylab="Miles Per Gallon ", pch=19)
+abline(lm(mpg~hp), col="red") # regression line (y~x)
+```
+

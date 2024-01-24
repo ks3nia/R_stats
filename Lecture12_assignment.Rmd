@@ -1,0 +1,183 @@
+---
+title: "Lecture12_assignment"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(spam)
+library(dotCall64)
+library(grid)
+library(maps)
+library(fields)
+```
+
+For these exercises, we will use a behavioral dataset (s03_behav_hfa.csv) similar to the one we used in Lecture 3, but with some extra info. Here is what the data look like:
+
+A refresher about the game:
+In the gambling game, subjects are given a choice between a safebet and a risky gamble. Subjects start each trial by looking at a number; if they believe that a second number, initially hidden, will be higher, they should take the bet (both numbers are 0-10). In this dataset there are 188 trials. 
+
+The columns in the data file contain behavioral data:
+* gamble_ind: binary, whether the subject chose to gamble (1) or not (0) in each trial
+* risk: how risky the choice was on each round
+* winprob: the probability of the gamble resulting in a win in each trial (takes values [0,1] in 0.1 increments)
+* regret: how optimal the choice was compared to the alternative (-10 means subject would have made an extra $10 by taking the other option)
+* rt: reaction time (in s): how long it took the subject to make a decision in each round
+
+In addition, the HFA column contains neural data: the power of high frequency activity (HFA) at a single prefrontal electrode at the time of outcome reveal (when they see the consequence of their choice).
+
+The main experimental question is: is HFA associated with any of the behavioral regressors, and, if so, which is the model that best describes HFA activation?
+
+# Linear regression and associated functions
+Start by examining the relationship between HFA and winprob:
+
+```{r}
+data<- read.csv("s03_behav_hfa.csv")
+data
+```
+
+
+* Plot them as a scatterplot
+```{r}
+plot(data$hfa, data$winprob)
+```
+
+* Run a linear regression
+```{r}
+linreg <-lm(data$winprob~data$hfa)
+```
+
+* Assign the output to a variable in your workspace for further manipulation
+
+
+* Use summary() to examine the fit quality and significance
+```{r}
+summary(linreg)
+plot(linreg)
+```
+
+* Plot the resulting fit on your scatterplot (you can use abline())
+```{r}
+plot(data$winprob, data$hfa)
+abline(linreg, col="red") # regression line (y~x)
+```
+
+
+Next, evaluate whether any of the other regressors show a significant relationship with HFA by running linear regressions for each.
+* gamble_ind: binary, whether the subject chose to gamble (1) or not (0) in each trial
+* risk: how risky the choice was on each round
+* winprob: the probability of the gamble resulting in a win in each trial (takes values [0,1] in 0.1 increments)
+* regret: how optimal the choice was compared to the alternative (-10 means subject would have made an extra $10 by taking the other option)
+* rt: reaction time (in s): how long it took the subject to make a decision in each round
+```{r}
+#copy the rest:
+
+lmrisk <-lm(data$risk~data$hfa)
+summary(lmrisk)
+plot(lmrisk)
+
+lmregret <-lm(data$regret~data$hfa)
+summary(lmregret)
+plot(lmregret)
+
+lmrt <-lm(data$rt~data$hfa)
+summary(lmrt)
+plot(lmrt)
+
+
+
+```
+
+
+# General linear model and model comparison
+We wnat to increase the complexity of the model by adding multiple regressors, as necessary, to capture as much variance in the neural data as possible.
+Let's start by examining our regressor set for potential collinearity. You can do this by generating a correlation matrix for the regressors and plotting it as an image (tip: consider using cor()) and image.plot() from the fields package)
+```{r}
+
+library(fields)
+#not sure how to do this part
+reg_correl = cor(data)
+image.plot(reg_correl)
+
+```
+
+```
+Next, run a series of glm regressions to test different models to fit the neural data. For this exercise, we're going to carry out a forward model selection, starting with the simplest model and progressively adding complexity.
+
+* First, start by running the simplest model (basically a linera regression)
+* Select the regressor with the best fit from your original set of linear regressions, and assign it a model name (i.e. lm_0)
+* Next, run a GLM adding the second regressor in order of fit quality (i.e. lm_1)
+* Compare these two models with an ANOVA. If the ANOVA is significant, the added regressor produces a better fit and we should include it in the model
+* Iterate until adding regressors does not improve the model
+
+```{}
+```{r}
+
+lm_0 = glm(data$winprob ~ data$hfa)
+
+lm_1 = glm(data$winprob ~data$hfa + data$rt)
+anova(lm_0,lm_1,test='Chisq')
+
+summary(lm_0)
+summary(lm_1)
+```
+```{r}
+lm_0 = glm(data$winprob ~ data$hfa)
+
+lm_1 = glm(data$winprob ~data$hfa + data$rt +data$risk +data$regret+data$ï..gamble_ind)
+anova(lm_0,lm_1,test='Chisq') # run anova for each one (or look at R2 value for each one)
+
+summary(lm_0)
+summary(lm_1)
+plot(lm_1)
+```
+
+```
+
+Some questions to consider:
+* How many regressors are in the final model?
+* What is the progressive increase in goodness-of-fit produced by adding each regressor (think R2)?
+* Do you think the order in which we add regressors can affect our conclusions?
+* Is multicollinearity a concern in this analysis?
+
+# Logistic regression
+When subjects play the game well, there should be a relationship between win probability and gamble choices (i.e. a good player should gamble more often when the probability of winning is higher).
+This is appropriately modeled with a logistic regression, since the outcome variable (gamble/no gamble) is binary.
+
+* Run a binomial regression to examine whether there is a relationship between win probability and gamble trials. Hint: use glm(Y ~ X, family=binomial) to specify a logit link.
+```{r}
+binomreg <-glm(data$winprob~data$ï..gamble_ind, family = binomial)
+summary(binomreg)
+plot(binomreg)
+
+```
+
+
+# ANOVA
+Some people may hesitate more or less depending on whether the probability of winning is large or small. Thus we can hypothesize a relationship between RT and winprob.
+There are many multiple winprob levels, so a good way to test whether any differences in RT exist is through an ANOVA test.
+
+* Run an ANOVA to test whether there are differences between mean RTs across winprob levels.
+```{r}
+#from: http://www.sthda.com/english/wiki/one-way-anova-test-in-r
+
+res.aov <- aov(data$rt~data$winprob, data = data)
+# Summary of the analysis
+summary(res.aov)
+```
+
+
+* (optional) If significant, you can run a Tukey post-hoc test to identify which differences are driving this relationship. To do this, you will need to convert the numerical winprob levels to factors (otherwise TukeyHSD() throws an error).
+```{r}
+win <- as.factor(data$winprob)
+res.aov2<-aov(data$rt~win, data=data)
+win
+tu <-TukeyHSD(res.aov2)
+plot(tu)
+```
+
+Compare the reaction times for the three types of trials (Gamble/Safebet/Timeout) using an ANOVA. If the ANOVA is significant, follow up with a Tukey test to verify which of the pair wise comparisons is significant.
+

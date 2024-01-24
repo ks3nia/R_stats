@@ -1,0 +1,256 @@
+---
+title: "Lecture4_assignment"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Generating data
+R has several functions to generate and sample data. We're going to work with two of them, runif() and rnorm(), which sample a uniform (all values are equally likely) and a Gaussian (normal) distribution.
+```{r}
+gaus_data = rnorm(50, mean=0, sd=30)
+unif_data = runif(min=0, max=50, 50)
+```
+Let's compare the sampled distributions side by side:
+
+```{r}
+par(mfcol=c(1,2)) # Use two plots instead of one
+hist(unif_data, main='Uniform distribution',xlab='Value',las=1,bty='l')
+hist(gaus_data, main='Gaussian distribution',xlab='Value',las=1,bty='l')
+```
+
+Notice how they are not that closely distinguishable - if we generate a lot more data points the shape will be much clearer:
+```{r}
+unif_err = runif(min=0, max=50, 10000) # normal error
+gaus_err = rnorm(10000, mean=0, sd=10)
+par(mfcol=c(1,2)) # Use two plots instead of one
+hist(unif_err, main='Errors from uniform distribution',xlab='Error',las=1,bty='l', ylim=c(0,2000))
+hist(gaus_err, main='Errors from Gaussian distribution',xlab='Error',las=1,bty='l', ylim=c(0,2000))
+```
+
+# Sampling error
+Let's now try to recover the parameters (mean and SD) of a known distribution we previously generated.
+First, lets generate our sampling distribution with few data points.
+```{r}
+gaus_err = rnorm(10, mean=0, sd=10)
+mean(gaus_err)
+sd(gaus_err)
+```
+
+Notice how these estimates are not very accurate. If we 'collected' more data, however, the accuracy of the estimations will go up:
+```{r}
+gaus_err = rnorm(100, mean=0, sd=10)
+mean(gaus_err)
+sd(gaus_err)
+
+gaus_err = rnorm(100000, mean=0, sd=10)
+mean(gaus_err)
+sd(gaus_err)
+```
+
+With a large number of estimations, the recovered parameters are very close to the know true ones.
+This is anoalogous to the situation with true data collection - we are trying to estimate the true population parameterers from incomplete, random samples.
+
+Let's do this in a slightly different way. Instead of trusting the data generation functions in R, imagine we have access to data from the whole population.
+We can then sample this dataset by selecting subset of points, just as we would in a real experiment. Let's do that multiple times.
+```{r}
+data_sim = rnorm(100000, mean=0, sd=10)
+nsim = 10
+par(mfcol=c(3,3))
+hist(data_sim, xlim=c(-50,50), breaks=seq(from=-50,to=50,by=1),col='lightgrey')
+for(i in 1:8) {
+  data_sim_subset = sample(data_sim,50)
+  hist(data_sim_subset, xlim=c(-50,50),ylim=c(0,8), breaks=seq(from=-50,to=50,by=1),col='red')
+  arrows(mean(data_sim_subset),0,mean(data_sim_subset),20,col='red')
+}
+
+```
+
+Notice the mean estimates (red vertical lines) jitter around, but overall a 50 datapoints subsample does a pretty good job of estimating the true mean.
+
+# Your turn
+For these exercises, you can continue to use the gambling dataset.
+```{r}
+#game_data <- read.csv('/Users/ignaciosaez/Dropbox/UC_Davis/Teaching/NSC219/NSC219/lectures/lecture_3/data/s01_behav_data.csv')
+
+game_data <- read.csv('C:/Users/Ksenia/OneDrive/Desktop/stats class/s01_behav_data.csv')
+
+rt = game_data$buttonpress.time - game_data$newround.time
+hist(rt)
+mean(rt,na.rm=T)
+sd(rt,na.rm=T)
+```
+
+# Plotting
+
+Layout and lattice plotting
+
+R has some serious plotting chops. Sometimes this may make your life easier than you expected. Let's try something a bit silly - loading the gambling behavioral dataset and feeding it to plot()
+```{r}
+plot(game_data, cex=0.2)
+```
+Overkill, but sometimes great for quick exploratory data plotting.
+
+If we wanted to do something a bit more curated, we can play with plot layout. There are two main options: the simplest is par(mfcol=c(n,m)), which will create n x m plot tiles (empty! - will be populated as you call your plot functions) and the more elaborate layout() function, which will allow a lot more fine-tuning. Let's have a quick look:
+```{r}
+par(mfcol=c(1,2))
+hist(game_data$payoff,xlab='Payoff ($)',las=1,col='lightblue',main='Payoff distribution across rounds')
+hist(game_data$rpe,xlab='Reward prediction error ($)',las=1,col='red',main='RPE')
+```
+
+if we wanted these tiled vertically, we would just use 'par(mfcol=c(1,2))'.
+
+Let's try something a little bit more elaborate: a scatterplot with marginal histograms. For this level of control we will need layout().
+
+Since I anticipate this is a plot that I will call many times over the course of my analysis, I'm going to encapsulate it in a function called scatterhist().
+
+```{r}
+scatterhist = function(x, y, xlab="", ylab=""){
+  zones=matrix(c(2,0,1,3), ncol=2, byrow=TRUE)
+  layout(zones, widths=c(4/5,1/5), heights=c(1/5,4/5))
+  xhist = hist(x, plot=FALSE)
+  yhist = hist(y, plot=FALSE)
+  top = max(c(xhist$counts, yhist$counts))
+  par(mar=c(3,3,1,1))
+  plot(x,y)
+  par(mar=c(0,3,1,1))
+  barplot(xhist$counts, axes=FALSE, ylim=c(0, top), space=0, col='lightblue')
+  par(mar=c(3,0,1,1))
+  barplot(yhist$counts, axes=FALSE, xlim=c(0, top), space=0, col='red', horiz=TRUE)
+  par(oma=c(3,3,0,0))
+  mtext(xlab, side=1, line=1, outer=TRUE, adj=0, 
+    at=.8 * (mean(x) - min(x))/(max(x)-min(x)))
+  mtext(ylab, side=2, line=1, outer=TRUE, adj=0, 
+    at=(.8 * (mean(y) - min(y))/(max(y) - min(y))))
+}
+
+scatterhist(game_data$payoff, game_data$rpe, xlab="Payoff ($)", ylab="RPE ($)")
+```
+
+# Your turn
+Exercises to complete:
+
+* Estimate the mean and SD of the subject reaction times from the gambling dataset. To do this, you will need to calculate the timing of each reaction (buttonpress.times) with respect to trial start (newround.times).
+```{r}
+View(game_data)
+
+
+RT <- game_data$buttonpress.time- game_data$newround.time
+RT
+sdRT <-sd(RT, na.rm = TRUE) #removes NA values!
+meanRT<-mean(RT, na.rm = TRUE)
+meanRT
+
+
+```
+
+
+* Now, plot these reaction times as a (properly annotated) histogram.
+```{r}
+
+hist(RT,xlab='Time (sec)',las=1,col='lightblue',main='Reaction times')
+```
+
+
+* Write your own zscore() function. It should take in a numeric vector, and return three pieces of info: a normalized version of the vector, and the original mean and SD. Once created, use it to plot a new reaction times histogram, but with z-scored data.
+
+```{r}
+#zscore= mean/SD
+zscore.plot =function(x,xlab ="", ylab=""){
+  zscores <-(RT-meanRT)/sdRT
+  View(zscores)
+  View(meanRT)
+  View(sdRT)
+  
+  }
+  
+x <- zscores
+zscore.plot (zscores)
+hist(zscores, xlab="Normalized RT", ylab="Frequency")
+
+```
+
+* One possibility is that reaction times depend on the type of choice (gamble vs safebet). Separate RTs byt choice type, and plot them using a boxplot. Use different colors.
+
+```{r}
+#View(game_data)
+
+RT.Safe <- RT[game_data$choice.class == "Safebet"]
+RT.Safe  
+  
+RT.gamble <- RT[game_data$choice.class == "Gamble"]
+RT.gamble
+
+boxplot(RT.Safe, RT.gamble,
+        main= "RT depending on choice",
+        names = c("Safebet", "Gamble"),
+        notch = FALSE
+        )
+
+```
+
+* Next, try combining plots - try to create side-by-side plots Hint: use par(mfcol=c(n,m)) to create a n x m tiled plotting space before calling plot().
+```{r}
+par(mfcol=c(1,2))
+hist(RT.Safe,xlab='RT (sec)',las=1,col='lightblue',main='RT Safe')
+hist(RT.gamble,xlab='RT (sec)',las=1,col='red',main='RT Gamble')
+```
+
+
+* Next, do the same by using layout. Create a 2x2 plot layout, with the top 2 plots being 1/3 of the height of the bottom ones.
+```{r}
+xhist = hist(RT.Safe, plot=FALSE)
+yhist = hist(RT.gamble, plot=FALSE)
+top = max(c(xhist$counts, yhist$counts))
+nf <-layout(matrix(c(1,2,3,4), 2,2, byrow=TRUE), heights=c(1/3,2/3))
+layout.show(nf)  #shows proposed layout
+
+par(mar= c(2,2,1,1))  
+boxplot(RT.Safe, main ="RT Safebet", xlab = "", ylab = "")
+par(mar=c(2,2,1,1))
+boxplot(RT.Safe, main ="RT Safebet", xlab = "", ylab = "")
+par(mar=c(0,1,0,0))
+boxplot(RT.gamble, main ="RT Gamble")
+par(mar=c(0,1,0,0))
+boxplot(RT.gamble, main ="RT Gamble")
+```
+
+* Generate 8 different normal distributions using runif() and plot them in a 3x3 layout. For the plot in the 9th tile, concatenate and plot together all 8 with a different color. Include a vertical line indicating the mean.
+```{r}
+nf <-layout(matrix(c(1,2,3,4,5,6,7,8,9), 3,3, byrow=TRUE))
+layout.show(nf)  #shows proposed layout
+
+runif(2000) #creates random deviates
+for (i in 1:8){
+
+  x<-runif(20) #creates random deviates
+  par(mar= c(i,2,1,1))  
+  hist(x, xlab = "", ylab = "")
+}
+```
+
+
+```{r}
+#different way: using gaussian distributions
+x = numeric()
+layout(matrix(c(1,2,3,4,5,6,7,8,9), 3,3 ))
+for (i in 1:8){
+  gauss_plot <- rnorm(100, mean =1.7, sd =0.4)
+  hist(gauss_plot)
+  arrows(mean(gauss_plot), 0, mean(gauss_plot), 100, col ="red")
+  x<- append(x, gauss_plot)
+}
+hist(x, col ="lightblue")
+arrows(mean(x), 0, mean(x), 200, col ="red")
+
+
+
+
+```
+
+
+
